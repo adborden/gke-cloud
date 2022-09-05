@@ -56,6 +56,7 @@ spec:
       containers:
         - name: external-dns
           image: k8s.gcr.io/external-dns/external-dns:v0.12.2
+          imagePullPolicy: Always
           args:
             - --source=service
             - --source=ingress
@@ -72,6 +73,9 @@ spec:
             requests:
               cpu: 250m
               memory: 512Mi
+            limits:
+              cpu: 250m
+              memory: 512Mi
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -81,3 +85,14 @@ spec:
                 operator: In
                 values:
                 - "true"
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                    - external-dns
+                topologyKey: kubernetes.io/hostname

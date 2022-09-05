@@ -1,14 +1,34 @@
 ---
 name: commit
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   external-dns:
     name: external-dns
     runs-on: ubuntu-latest
+    env:
+      app_namespace: external-dns
+      app_directory: external-dns
     steps:
       - uses: actions/checkout@v2
       - name: kube-score check
         uses: piraces/kube-score-ga@v0.1.2
         with:
-          manifests-folders: external-dns
+          manifests-folders: ${{ env.app_directory }}/*.yml
+        continue-on-error: true
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+      - name: kube credentials
+        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
+      - name: kubectl diff
+        run: kubectl diff --namespace $app_namespace --filename $app_directory || true
+      - name: kubectl apply
+        run: kubectl apply --namespace $app_namespace --filename $app_directory --wait
