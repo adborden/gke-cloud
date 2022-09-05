@@ -1,0 +1,14 @@
+---
+name: commit
+on: [push]
+
+jobs:
+  external-dns:
+    name: external-dns
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: kube-score check
+        uses: piraces/kube-score-ga@v0.1.2
+        with:
+          manifests-folders: external-dns
