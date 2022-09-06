@@ -26,7 +26,7 @@ jobs:
       - name: kubectl diff
         run: kubectl diff --namespace $app_namespace --filename $app_directory || true
       - name: kubectl apply
-        run: kubectl apply --namespace $app_namespace --filename $app_directory --wait --atomic
+        run: kubectl apply --namespace $app_namespace --filename $app_directory --wait
 
   default-ingress:
     name: default-ingress
@@ -48,4 +48,4 @@ jobs:
       - name: kubectl diff
         run: kubectl diff --namespace $app_namespace --filename $app_directory || true
       - name: kubectl apply
-        run: kubectl apply --namespace $app_namespace --filename $app_directory --wait --atomic
+        run: kubectl apply --namespace $app_namespace --filename $app_directory --wait

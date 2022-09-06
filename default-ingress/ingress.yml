@@ -23,7 +23,7 @@ metadata:
   name: default
 spec:
   domains:
-    - wallabag-stage.gke.app.a14n.net
+    - wallabag.app.a14n.net
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -36,6 +36,6 @@ metadata:
 spec:
   defaultBackend:
     service:
-      name: wallabag-stage # Name of the Service targeted by the Ingress
+      name: wallabag
       port:
-        number: 8080 # Should match the port used by the Service
+        number: 8080
