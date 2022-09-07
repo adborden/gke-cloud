@@ -34,8 +34,14 @@ metadata:
     networking.gke.io/managed-certificates: default
     networking.gke.io/v1beta1.FrontendConfig: default
 spec:
-  defaultBackend:
-    service:
-      name: wallabag
-      port:
-        number: 8080
+  rules:
+    - host: wallabag.app.a14n.net
+      http:
+        paths:
+        - pathType: Prefix
+          path: /
+          backend:
+            service:
+              name: wallabag
+              port:
+                number: 8080
