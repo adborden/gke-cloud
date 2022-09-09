@@ -23,9 +23,21 @@ jobs:
       - uses: 'google-github-actions/setup-gcloud@v0'
       - name: kube credentials
         run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
-      - name: kubectl diff
-        run: kubectl diff --namespace $app_namespace --filename $app_directory || true
-      - name: kubectl apply
+      - id: diff
+        name: kubectl diff
+        run: |
+          set +e
+          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
+          kubectl diff --namespace $app_namespace --filename $app_directory > ${app_directory}.diff
+          if [[ $? -gt 1 ]]; then
+            # an error occured, fail the job
+            exit $?
+          elif [[ $? == 1 ]]; then
+            # there's a diff, set an output for artifact upload.
+            echo "::set-output name=artifact::${app_directory}.diff"
+          fi
+      - if: ${{ steps.diff.outputs.artifact }}
+        name: kubectl apply
         run: kubectl apply --namespace $app_namespace --filename $app_directory --wait
 
   default-ingress:
@@ -45,7 +57,19 @@ jobs:
       - uses: 'google-github-actions/setup-gcloud@v0'
       - name: kube credentials
         run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
-      - name: kubectl diff
-        run: kubectl diff --namespace $app_namespace --filename $app_directory || true
-      - name: kubectl apply
+      - id: diff
+        name: kubectl diff
+        run: |
+          set +e
+          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
+          kubectl diff --namespace $app_namespace --filename $app_directory > ${app_directory}.diff
+          if [[ $? -gt 1 ]]; then
+            # an error occured, fail the job
+            exit $?
+          elif [[ $? == 1 ]]; then
+            # there's a diff, set an output for artifact upload.
+            echo "::set-output name=artifact::${app_directory}.diff"
+          fi
+      - if: ${{ steps.diff.outputs.artifact }}
+        name: kubectl apply
         run: kubectl apply --namespace $app_namespace --filename $app_directory --wait
