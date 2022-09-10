@@ -6,11 +6,11 @@ Automation for GKE cloud project.
 
 Check the diff.
 
-    $ kubectl diff --namespace $app_namespace --filename $app_directory --prune
+    $ kubectl diff --namespace $app_namespace --filename $app_name --prune
 
 Apply the changes.
 
-    $ kubectl diff --namespace $app_namespace --filename $app_directory --prune --wait
+    $ kubectl diff --namespace $app_namespace --filename $app_name --prune --wait
 
 ## Apps
 

@@ -3,232 +3,37 @@ name: pull-request
 on: [pull_request]
 
 jobs:
-  volumes:
-    name: volumes
-    runs-on: ubuntu-latest
-    env:
-      app_directory: volumes
-      cluster_name: app-cloud-3
-      cluster_location: us-west1-a
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: 'google-github-actions/get-gke-credentials@v0'
-        with:
-          cluster_name: ${{ env.cluster_name }}
-          location: ${{ env.cluster_location }}
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          kubectl_extra_args=
-          if [[ -n "$app_namespace" ]]; then
-            kubectl_extra_args="--namespace ${app_namespace}"
-          fi
-
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --filename $app_directory ${kubectl_extra_args} > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit 1
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: post comment
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |-
-          app_instace=${app_namespace:-${cluster_name}}
-
-          cat <<EOF > pr_comment_body.txt
-          <strong>${{ env.app_directory }} (${app_instance})</strong> is ready for deploy.
-
-          <details>
-          <summary>kubectl diff <strong>${{ env.app_directory }} (${app_instance})</strong></summary>
-
-          \`\`\`diff
-          $(cat ${{ steps.diff.outputs.artifact }})
-          \`\`\`
-
-          </details>
-
-          - [ ] Please review the **${{ env.app_directory }} (${app_instance})** diff
-          EOF
-
-          gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
-
-
   external-dns-app-cloud-1:
     name: external-dns (app-cloud-1)
-    runs-on: ubuntu-latest
-    env:
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    with:
+      app_name: external-dns
       app_namespace: external-dns
-      app_directory: external-dns
       cluster_name: app-cloud-1
       cluster_location: us-west1
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: 'google-github-actions/get-gke-credentials@v0'
-        with:
-          cluster_name: ${{ env.cluster_name }}
-          location: ${{ env.cluster_location }}
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --namespace $app_namespace --kustomize $app_directory/overlays/$cluster_name > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit 1
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: post comment
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |-
-          cat <<EOF > pr_comment_body.txt
-          <strong>${{ env.app_directory }} (${{ env.cluster_name }})</strong> is ready for deploy.
-
-          <details>
-          <summary>kubectl diff <strong>${{ env.app_directory }} (${{ env.cluster_name }})</strong></summary>
-
-          \`\`\`diff
-          $(cat ${{ steps.diff.outputs.artifact }})
-          \`\`\`
-
-          </details>
-
-          - [ ] Please review the **${{ env.app_directory }} (${{ env.cluster_name }})** diff
-          EOF
-
-          gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
+      kustomize_overlay_name: app-cloud-1
+    secrets: inherit
 
   external-dns-app-cloud-3:
     name: external-dns (app-cloud-3)
-    runs-on: ubuntu-latest
-    env:
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    with:
       app_namespace: external-dns
-      app_directory: external-dns
+      app_name: external-dns
       cluster_name: app-cloud-3
       cluster_location: us-west1-a
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: 'google-github-actions/get-gke-credentials@v0'
-        with:
-          cluster_name: ${{ env.cluster_name }}
-          location: ${{ env.cluster_location }}
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --namespace $app_namespace --kustomize $app_directory/overlays/$cluster_name > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit 1
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: post comment
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |-
-          cat <<EOF > pr_comment_body.txt
-          <strong>${{ env.app_directory }} (${{ env.cluster_name }})</strong> is ready for deploy.
+      kustomize_overlay_name: app-cloud-3
+    secrets: inherit
 
-          <details>
-          <summary>kubectl diff <strong>${{ env.app_directory }} (${{ env.cluster_name }})</strong></summary>
-
-          \`\`\`diff
-          $(cat ${{ steps.diff.outputs.artifact }})
-          \`\`\`
-
-          </details>
-
-          - [ ] Please review the **${{ env.app_directory }} (${{ env.cluster_name }})** diff
-          EOF
-
-          gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
-
-  default-ingress:
-    name: default-ingress
-    runs-on: ubuntu-latest
-    env:
+  default-ingress-app-cloud-1-production:
+    name: default-ingress (app-cloud-1) (production)
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    with:
       app_namespace: production
-      app_directory: default-ingress
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - name: kube credentials
-        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --namespace $app_namespace --filename $app_directory > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit $?
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: post comment
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |-
-          cat <<EOF > pr_comment_body.txt
-          <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong> is ready for deploy.
-
-          <details>
-          <summary>kubectl diff <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong></summary>
-
-          \`\`\`diff
-          $(cat ${{ steps.diff.outputs.artifact }})
-          \`\`\`
-
-          </details>
-
-          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
-          EOF
-
-          gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
+      app_name: default-ingress
+      cluster_name: app-cloud-1
+      cluster_location: us-west1
+    secrets: inherit
 
   nextcloud:
     name: nextcloud
@@ -236,7 +41,7 @@ jobs:
     environment: nextcloud
     env:
       app_namespace: production
-      app_directory: nextcloud
+      app_name: nextcloud
       helm_repository_name: nextcloud
       helm_repository_url: https://nextcloud.github.io/helm/
       helm_additional_args: >-
@@ -265,19 +70,19 @@ jobs:
         run: |
           set +e
           template_yaml=$(mktemp)
-          helm template $app_directory $app_directory/$helm_repository_name --namespace $app_namespace --values $app_directory/values.yaml $helm_additional_args > $template_yaml
+          helm template $app_name $app_name/$helm_repository_name --namespace $app_namespace --values $app_name/values.yaml $helm_additional_args > $template_yaml
           if [[ $? -ne 0 ]]; then
             # helm failed, don't continue
             exit 1
           fi
 
-          kubectl diff --namespace $app_namespace --filename $template_yaml > ${app_directory}.diff
+          kubectl diff --namespace $app_namespace --filename $template_yaml > ${app_name}.diff
           if [[ $? -gt 1 ]]; then
             # an error occured, fail the job
             exit $?
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
+          elif [[ $? == 1 && -s "${app_name}.diff" ]]; then
             # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
+            echo "::set-output name=artifact::${app_name}.diff"
           fi
       - if: ${{ steps.diff.outputs.artifact }}
         name: post comment
@@ -285,10 +90,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
           cat <<EOF > pr_comment_body.txt
-          <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong> is ready for deploy.
+          <strong>${{ env.app_name }} (${{ env.app_namespace }})</strong> is ready for deploy.
 
           <details>
-          <summary>helm diff <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong></summary>
+          <summary>helm diff <strong>${{ env.app_name }} (${{ env.app_namespace }})</strong></summary>
 
           \`\`\`diff
           $(cat ${{ steps.diff.outputs.artifact }})
@@ -296,7 +101,16 @@ jobs:
 
           </details>
 
-          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
+          - [ ] Please review the **${{ env.app_name }} (${{ env.app_namespace }})** diff
           EOF
 
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
+
+  volumes:
+    name: volumes (app-cloud-3)
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    with:
+      app_name: volumes
+      cluster_name: app-cloud-3
+      cluster_location: us-west1-a
+    secrets: inherit
