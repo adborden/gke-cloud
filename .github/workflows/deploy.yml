@@ -32,7 +32,7 @@ jobs:
           if [[ $? -gt 1 ]]; then
             # an error occured, fail the job
             exit $?
-          elif [[ $? == 1 ]]; then
+          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
             # there's a diff, set an output for artifact upload.
             echo "::set-output name=artifact::${app_directory}.diff"
           fi
@@ -66,10 +66,63 @@ jobs:
           if [[ $? -gt 1 ]]; then
             # an error occured, fail the job
             exit $?
-          elif [[ $? == 1 ]]; then
+          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
             # there's a diff, set an output for artifact upload.
             echo "::set-output name=artifact::${app_directory}.diff"
           fi
       - if: ${{ steps.diff.outputs.artifact }}
         name: kubectl apply
         run: kubectl apply --namespace $app_namespace --filename $app_directory --wait
+
+  nextcloud:
+    name: nextcloud
+    runs-on: ubuntu-latest
+    environment: nextcloud
+    env:
+      app_namespace: production
+      app_directory: nextcloud
+      helm_repository_name: nextcloud
+      helm_repository_url: https://nextcloud.github.io/helm/
+      helm_additional_args: >-
+        --set nextcloud.host=${{ secrets.NEXTCLOUD_HOST }}
+        --set nextcloud.password=${{ secrets.NEXTCLOUD_PASSWORD }}
+        --set postgresql.global.auth.password=${{ secrets.NEXTCLOUD_POSTGRESQL_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+      - name: kube credentials
+        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
+      - uses: azure/setup-helm@v3
+        with:
+           version: latest
+      - name: helm repo add
+        run: |
+          helm repo add $helm_repository_name $helm_repository_url
+      - id: diff
+        name: helm diff
+        run: |
+          set +e
+          template_yaml=$(mktemp)
+          helm template $app_directory $app_directory/$helm_repository_name --namespace $app_namespace --values $app_directory/values.yaml $helm_additional_args > $template_yaml
+          if [[ $? -ne 0 ]]; then
+            # helm failed, don't continue
+            exit 1
+          fi
+
+          kubectl diff --namespace $app_namespace --filename $template_yaml > ${app_directory}.diff
+          if [[ $? -gt 1 ]]; then
+            # an error occured, fail the job
+            exit $?
+          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
+            # there's a diff, set an output for artifact upload.
+            echo "::set-output name=artifact::${app_directory}.diff"
+          fi
+      - if: ${{ steps.diff.outputs.artifact }}
+        name: helm upgrade
+        run: helm upgrade $app_directory $app_directory/$helm_repository_name --debug --wait --install --namespace $app_namespace --values $app_directory/values.yaml $helm_additional_args
