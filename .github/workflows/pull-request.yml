@@ -15,6 +15,7 @@ jobs:
     with:
       app_name: default-ingress
       app_namespace: default-ingress
+    secrets: inherit
 
   nextcloud:
     name: nextcloud
