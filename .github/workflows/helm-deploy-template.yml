@@ -26,7 +26,6 @@ jobs:
   deploy:
     name: nextcloud
     runs-on: ubuntu-latest
-    environment: nextcloud
     outputs:
       diff: ${{ steps.diff.outputs.diff }}
     env:

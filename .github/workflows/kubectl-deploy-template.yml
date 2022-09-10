@@ -67,6 +67,26 @@ jobs:
           EOF
 
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
-      - if: ${{ steps.diff.outputs.diff && github.event_name == 'push' }}
-        name: kubectl apply
+
+  deploy:
+    name: kubectl diff ${{ inputs.app_name }} ${{ inputs.app_namespace }}
+    runs-on: ubuntu-latest
+    needs:
+      - diff
+    if: ${{ jobs.diff.outputs.diff && github.event_name == 'push' }}
+    env:
+      app_name: ${{ inputs.app_name }}
+      app_namespace: ${{ inputs.app_namespace }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+      - name: kube credentials
+        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
+      - name: kubectl apply
         run: kubectl apply --namespace $app_namespace --filename $app_name --wait
