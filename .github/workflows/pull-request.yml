@@ -4,14 +4,14 @@ on: [pull_request]
 
 jobs:
   external-dns:
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/resuable-workflows
     with:
       app_name: external-dns
       app_namespace: external-dns
     secrets: inherit
 
   default-ingress:
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/resuable-workflows
     with:
       app_name: default-ingress
       app_namespace: default-ingress
