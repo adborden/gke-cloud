@@ -14,9 +14,11 @@ on:
         required: true
 
 jobs:
-  deploy:
-    name: kubectl deploy ${{ inputs.app_name }}
+  diff:
+    name: kubectl diff ${{ inputs.app_name }} ${{ inputs.app_namespace }}
     runs-on: ubuntu-latest
+    outputs:
+      diff: ${{ steps.diff.outputs.diff }}
     env:
       app_name: ${{ inputs.app_name }}
       app_namespace: ${{ inputs.app_namespace }}
@@ -41,9 +43,30 @@ jobs:
             # an error occured, fail the job
             exit $?
           elif [[ $? == 1 && -s "${app_name}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_name}.diff"
+            # there's a diff, set an output for reuse in other jobs
+            echo "::set-output name=diff::${app_name}.diff"
           fi
-      - if: ${{ steps.diff.outputs.artifact }}
+      - if: ${{ steps.diff.outputs.diff  && github.event_name == 'pull_request' }}
+        name: post comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |-
+          cat <<EOF > pr_comment_body.txt
+          <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong> is ready for deploy.
+
+          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
+
+          <details>
+          <summary>helm diff <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong></summary>
+
+          \`\`\`diff
+          $(cat ${{ steps.diff.outputs.diff }})
+          \`\`\`
+
+          </details>
+          EOF
+
+          gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
+      - if: ${{ steps.diff.outputs.diff && github.event_name == 'push' }}
         name: kubectl apply
         run: kubectl apply --namespace $app_namespace --filename $app_name --wait
