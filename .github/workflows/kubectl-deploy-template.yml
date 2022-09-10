@@ -1,0 +1,49 @@
+---
+name: deploy
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      app_namespace:
+        required: true
+        type: string
+    secrets:
+      GCLOUD_SERVICE_ACCOUNT_KEY:
+        required: true
+
+jobs:
+  deploy:
+    name: kubectl deploy ${{ inputs.app_name }}
+    runs-on: ubuntu-latest
+    env:
+      app_name: ${{ inputs.app_name }}
+      app_namespace: ${{ inputs.app_namespace }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+      - name: kube credentials
+        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
+      - id: diff
+        name: kubectl diff
+        run: |
+          set +e
+          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
+          kubectl diff --namespace $app_namespace --filename $app_name > ${app_name}.diff
+          if [[ $? -gt 1 ]]; then
+            # an error occured, fail the job
+            exit $?
+          elif [[ $? == 1 && -s "${app_name}.diff" ]]; then
+            # there's a diff, set an output for artifact upload.
+            echo "::set-output name=artifact::${app_name}.diff"
+          fi
+      - if: ${{ steps.diff.outputs.artifact }}
+        name: kubectl apply
+        run: kubectl apply --namespace $app_namespace --filename $app_name --wait
