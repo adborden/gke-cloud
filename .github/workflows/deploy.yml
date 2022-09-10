@@ -14,14 +14,15 @@ jobs:
     secrets: inherit
 
   default-ingress:
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@resuable-workflows
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/resuable-workflows
     with:
       app_name: default-ingress
       app_namespace: production
     secrets: inherit
 
   nextcloud:
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@resuable-workflows
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/resuable-workflows
+    environment: nextcloud
     with:
       app_name: nextcloud
       app_namespace: production
