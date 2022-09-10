@@ -14,7 +14,7 @@ jobs:
     uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/resuable-workflows
     with:
       app_name: default-ingress
-      app_namespace: default-ingress
+      app_namespace: productionsdfa
     secrets: inherit
 
   nextcloud:

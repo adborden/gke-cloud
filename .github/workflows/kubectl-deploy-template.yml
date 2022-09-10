@@ -41,7 +41,7 @@ jobs:
           kubectl diff --namespace $app_namespace --filename $app_name > ${app_name}.diff
           if [[ $? -gt 1 ]]; then
             # an error occured, fail the job
-            exit $?
+            exit 1
           elif [[ $? == 1 && -s "${app_name}.diff" ]]; then
             # there's a diff, set an output for reuse in other jobs
             echo "::set-output name=diff::${app_name}.diff"
