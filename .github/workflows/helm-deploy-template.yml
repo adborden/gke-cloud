@@ -1,5 +1,5 @@
 ---
-name: deploy kubectl
+name: deploy helm
 on:
   workflow_call:
     inputs:
@@ -7,6 +7,7 @@ on:
         required: true
         type: string
       app_namespace:
+        required: true
         type: string
       cluster_name:
         required: true
@@ -14,12 +15,20 @@ on:
       cluster_location:
         required: true
         type: string
-      kustomize_overlay_name:
+      helm_repository_name:
+        required: true
+        type: string
+      helm_repository_url:
+        required: true
+        type: string
+      helm_additional_args:
         required: false
         type: string
     secrets:
       GCLOUD_SERVICE_ACCOUNT_KEY:
         required: true
+      HELM_SECRET_VALUES:
+        required: false
 
 jobs:
   deploy:
@@ -32,7 +41,10 @@ jobs:
       app_namespace: ${{ inputs.app_namespace }}
       cluster_name: ${{ inputs.cluster_name}}
       cluster_location: ${{ inputs.cluster_location}}
-      kustomize_overlay_name: ${{ inputs.kustomize_overlay_name}}
+      helm_repository_name: ${{ inputs.helm_repository_name }}
+      helm_repository_url: ${{ inputs.helm_repository_url }}
+      helm_additional_args: ${{ inputs.helm_additional_args }}
+      HELM_SECRET_VALUES: ${{ secrets.HELM_SECRET_VALUES }}
     steps:
       - uses: actions/checkout@v2
       - uses: azure/setup-kubectl@v3
@@ -46,21 +58,30 @@ jobs:
         with:
           cluster_name: ${{ env.cluster_name }}
           location: ${{ env.cluster_location }}
+      - uses: azure/setup-helm@v3
+        with:
+           version: latest
+      - name: helm repo add
+        run: |
+          helm repo add $helm_repository_name $helm_repository_url
       - id: diff
-        name: kubectl diff
+        name: helm diff
         run: |
           set +e
+          template_yaml=$(mktemp)
+          helm template $app_name $app_name/$helm_repository_name --namespace $app_namespace --values $app_name/values.yaml --values <( cat <<<${HELM_SECRET_VALUES:-} ) $helm_additional_args > $template_yaml
+          if [[ $? -ne 0 ]]; then
+            # helm failed, don't continue
+            exit 1
+          fi
 
-          # Without --commit, kubectl diff is run. kubectl diff exits 0 if
-          # there is no diff, 1 if there is a diff, >1 if error.
-          bin/kubectl_deploy.sh > ${app_name}.diff
+          kubectl diff --namespace $app_namespace --filename $template_yaml > ${app_name}.diff
           kubectl_exit_code=$?
-
-          if [[ $kubectl_exit_code -gt 1 ]]; then
+          if [[ "$kubectl_exit_code" -gt 1 ]]; then
             # an error occured, fail the job
             exit 1
-          elif [[ $kubectl_exit_code == 1 && -s "${app_name}.diff" ]]; then
-            # there's a diff, set an output for reuse in other jobs
+          elif [[ "$kubectl_exit_code" == 1 && -s "${app_name}.diff" ]]; then
+            # there's a diff, set an output for other jobs
             echo "::set-output name=diff::${app_name}.diff"
           fi
       - if: ${{ steps.diff.outputs.diff  && github.event_name == 'pull_request' }}
@@ -68,19 +89,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
-          # Pretty string to describe the app we're deploying. Looks like:
-          # app_name (app_namespace) (cluster_name)
-          app_instance_description='${{ env.app_name }}'
-          if [[ -n '${{ env.app_namespace }}' ]]; then
-            app_instance_description="${app_instance_description} (${app_namespace})"
-          fi
-          app_instance_description='${app_instance_description} (${{ env.cluster_name }})'
+          # Pretty string to describe the app we're deploying.
+          app_instance_description='${{ env.app_name }} (${{ env.app_namespace }}) (${{ env.cluster_name }})'
 
           cat <<EOF > pr_comment_body.txt
           <strong>${app_instance_description}</strong> is ready for deploy.
 
           <details>
-          <summary>kubectl diff <strong>${app_instance_description}</strong></summary>
+          <summary>helm template diff <strong>${app_instance_description}</strong></summary>
 
           \`\`\`diff
           $(cat ${{ steps.diff.outputs.diff }})
@@ -93,5 +109,5 @@ jobs:
 
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
       - if: ${{ steps.diff.outputs.diff && github.event_name == 'push' }}
-        name: kubectl apply
-        run: bin/kubectl_deploy.sh --commit
+        name: helm upgrade
+        run: helm upgrade $app_name $app_name/$helm_repository_name --debug --wait --install --namespace $app_namespace --values $app_name/values.yaml --values <( cat <<<${HELM_SECRET_VALUES:-} ) $helm_additional_args
