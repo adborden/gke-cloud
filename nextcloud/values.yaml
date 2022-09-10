@@ -103,6 +103,7 @@ nextcloud:
   # Will be injected in /usr/local/etc/php/conf.d for apache image and in /usr/local/etc/php-fpm.d when nginx.enabled: true
   phpConfigs:
     nextcloud.custom.ini: |
+      [www]
       pm.max_children = 10
 
   # Default config files

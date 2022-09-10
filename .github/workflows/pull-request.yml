@@ -41,8 +41,6 @@ jobs:
           cat <<EOF > pr_comment_body.txt
           <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong> is ready for deploy.
 
-          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
-
           <details>
           <summary>kubectl diff <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong></summary>
 
@@ -51,6 +49,8 @@ jobs:
           \`\`\`
 
           </details>
+
+          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
           EOF
 
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
@@ -93,8 +93,6 @@ jobs:
           cat <<EOF > pr_comment_body.txt
           <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong> is ready for deploy.
 
-          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
-
           <details>
           <summary>kubectl diff <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong></summary>
 
@@ -103,6 +101,8 @@ jobs:
           \`\`\`
 
           </details>
+
+          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
           EOF
 
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
@@ -164,8 +164,6 @@ jobs:
           cat <<EOF > pr_comment_body.txt
           <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong> is ready for deploy.
 
-          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
-
           <details>
           <summary>helm diff <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong></summary>
 
@@ -174,6 +172,8 @@ jobs:
           \`\`\`
 
           </details>
+
+          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
           EOF
 
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
