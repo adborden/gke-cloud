@@ -224,13 +224,13 @@ nginx:
     #custom: |-
     #  worker_processes  1;..
 
-  #resources:
-  #  requests:
-  #    cpu: 250m
-  #    memory: 512Mi
-  #  limits:
-  #    cpu: 250m
-  #    memory: 512Mi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 1024Mi
 
 internalDatabase:
   enabled: false
@@ -303,7 +303,13 @@ postgresql:
     persistence:
       enabled: true
       size: 4Gi
-      # storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limit:
+        cpu: 1000m
+        memory: 1024Mi
 
 ##
 ## Redis chart configuration
