@@ -104,7 +104,7 @@ nextcloud:
   phpConfigs:
     zz-www.custom.conf: |
       [www]
-      pm.max_children = 10
+      pm.max_children = 25
 
   # Default config files
   # IMPORTANT: Will be used only if you put extra configs, otherwise default will come from nextcloud itself
