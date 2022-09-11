@@ -28,8 +28,8 @@ jobs:
       app_namespace: production
       helm_repository_name: nextcloud
       helm_repository_url: https://nextcloud.github.io/helm/
-      helm_additional_args: >-
-        --set nextcloud.host=${{ secrets.NEXTCLOUD_HOST }}
-        --set nextcloud.password=${{ secrets.NEXTCLOUD_PASSWORD }}
-        --set postgresql.global.auth.password=${{ secrets.NEXTCLOUD_POSTGRESQL_PASSWORD }}
+      #helm_additional_args: >-
+      #  --set nextcloud.host=${{ secrets.NEXTCLOUD_HOST }}
+      #  --set nextcloud.password=${{ secrets.NEXTCLOUD_PASSWORD }}
+      #  --set postgresql.global.auth.password=${{ secrets.NEXTCLOUD_POSTGRESQL_PASSWORD }}
     secrets: inherit

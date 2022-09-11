@@ -21,6 +21,8 @@ on:
     secrets:
       GCLOUD_SERVICE_ACCOUNT_KEY:
         required: true
+      HELM_SECRET_VALUES:
+        required: false
 
 jobs:
   deploy:
@@ -56,7 +58,7 @@ jobs:
         run: |
           set +e
           template_yaml=$(mktemp)
-          helm template $app_directory $app_directory/$helm_repository_name --namespace $app_namespace --values $app_directory/values.yaml $helm_additional_args > $template_yaml
+        helm template $app_directory $app_directory/$helm_repository_name --namespace $app_namespace --values $app_directory/values.yaml --values <( cat <<<${HELM_SECRET_VALUES:-} ) $helm_additional_args > $template_yaml
           if [[ $? -ne 0 ]]; then
             # helm failed, don't continue
             exit 1
