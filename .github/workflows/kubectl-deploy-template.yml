@@ -1,0 +1,97 @@
+---
+name: deploy kubectl
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      app_namespace:
+        type: string
+      cluster_name:
+        required: true
+        type: string
+      cluster_location:
+        required: true
+        type: string
+      kustomize_overlay_name:
+        required: false
+        type: string
+    secrets:
+      GCLOUD_SERVICE_ACCOUNT_KEY:
+        required: true
+
+jobs:
+  deploy:
+    name: kubectl deploy
+    runs-on: ubuntu-latest
+    outputs:
+      diff: ${{ steps.diff.outputs.diff }}
+    env:
+      app_name: ${{ inputs.app_name }}
+      app_namespace: ${{ inputs.app_namespace }}
+      cluster_name: ${{ inputs.cluster_name}}
+      cluster_location: ${{ inputs.cluster_location}}
+      kustomize_overlay_name: ${{ inputs.kustomize_overlay_name}}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+      - uses: 'google-github-actions/get-gke-credentials@v0'
+        with:
+          cluster_name: ${{ env.cluster_name }}
+          location: ${{ env.cluster_location }}
+      - id: diff
+        name: kubectl diff
+        run: |
+          set +e
+
+          # Without --commit, kubectl diff is run. kubectl diff exits 0 if
+          # there is no diff, 1 if there is a diff, >1 if error.
+          bin/kubectl_deploy.sh > ${app_name}.diff
+          kubectl_exit_code=$?
+
+          if [[ $kubectl_exit_code -gt 1 ]]; then
+            # an error occured, fail the job
+            exit 1
+          elif [[ $kubectl_exit_code == 1 && -s "${app_name}.diff" ]]; then
+            # there's a diff, set an output for reuse in other jobs
+            echo "::set-output name=diff::${app_name}.diff"
+          fi
+      - if: ${{ steps.diff.outputs.diff  && github.event_name == 'pull_request' }}
+        name: post PR comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |-
+          # Pretty string to describe the app we're deploying. Looks like:
+          # app_name (app_namespace) (cluster_name)
+          app_instance_description='${{ env.app_name }}'
+          if [[ -n '${{ env.app_namespace }}' ]]; then
+            app_instance_description="${app_instance_description} (${app_namespace})"
+          fi
+          app_instance_description='${app_instance_description} (${{ env.cluster_name }})'
+
+          cat <<EOF > pr_comment_body.txt
+          <strong>${app_instance_description}</strong> is ready for deploy.
+
+          <details>
+          <summary>kubectl diff <strong>${app_instance_description}</strong></summary>
+
+          \`\`\`diff
+          $(cat ${{ steps.diff.outputs.diff }})
+          \`\`\`
+
+          </details>
+
+          - [ ] Please review the **${app_instance_description}** diff
+          EOF
+
+          gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
+      - if: ${{ steps.diff.outputs.diff && github.event_name == 'push' }}
+        name: kubectl apply
+        run: bin/kubectl_deploy.sh --commit

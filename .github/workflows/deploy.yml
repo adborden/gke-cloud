@@ -6,205 +6,38 @@ on:
       - main
 
 jobs:
-  volumes:
-    name: volumes
-    runs-on: ubuntu-latest
-    env:
-      app_directory: volumes
-      cluster_name: app-cloud-3
-      cluster_location: us-west1-a
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: 'google-github-actions/get-gke-credentials@v0'
-        with:
-          cluster_name: ${{ env.cluster_name }}
-          location: ${{ env.cluster_location }}
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          kubectl_extra_args=
-          if [[ -n "$app_namespace" ]]; then
-            kubectl_extra_args="--namespace ${app_namespace}"
-          fi
-
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --filename $app_directory ${kubectl_extra_args} > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit 1
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: kubectl apply
-        run: |
-          kubectl_extra_args=
-          if [[ -n "$app_namespace" ]]; then
-            kubectl_extra_args="--namespace ${app_namespace}"
-          fi
-
-          kubectl apply --filename $app_directory ${kubectl_extra_args} --wait
 
   external-dns-app-cloud-1:
     name: external-dns (app-cloud-1)
-    runs-on: ubuntu-latest
-    env:
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    with:
+      app_name: external-dns
       app_namespace: external-dns
-      app_directory: external-dns
       cluster_name: app-cloud-1
       cluster_location: us-west1
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: 'google-github-actions/get-gke-credentials@v0'
-        with:
-          cluster_name: ${{ env.cluster_name }}
-          location: ${{ env.cluster_location }}
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --namespace $app_namespace --kustomize $app_directory/overlays/$cluster_name > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit 1
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: kubectl apply
-        run: kubectl apply --namespace $app_namespace --kustomize $app_directory/overlays/$cluster_name --wait
-
-  default-ingress:
-    name: default-ingress
-    runs-on: ubuntu-latest
-    env:
-      app_namespace: production
-      app_directory: default-ingress
-      cluster_name: app-cloud-1
-      cluster_location: us-west1
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: 'google-github-actions/get-gke-credentials@v0'
-        with:
-          cluster_name: ${{ env.cluster_name }}
-          location: ${{ env.cluster_location }}
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --namespace $app_namespace --filename $app_directory > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit $?
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: kubectl apply
-        run: kubectl apply --namespace $app_namespace --filename $app_directory --wait
+      kustomize_overlay_name: app-cloud-1
+    secrets: inherit
 
   external-dns-app-cloud-3:
     name: external-dns (app-cloud-3)
-    runs-on: ubuntu-latest
-    env:
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    with:
       app_namespace: external-dns
-      app_directory: external-dns
+      app_name: external-dns
       cluster_name: app-cloud-3
       cluster_location: us-west1-a
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: 'google-github-actions/get-gke-credentials@v0'
-        with:
-          cluster_name: ${{ env.cluster_name }}
-          location: ${{ env.cluster_location }}
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --namespace $app_namespace --kustomize $app_directory/overlays/$cluster_name > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit 1
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: kubectl apply
-        run: kubectl apply --namespace $app_namespace --kustomize $app_directory/overlays/$cluster_name --wait
+      kustomize_overlay_name: app-cloud-3
+    secrets: inherit
 
-  default-ingress:
-    name: default-ingress
-    runs-on: ubuntu-latest
-    env:
+  default-ingress-app-cloud-1-production:
+    name: default-ingress (production) (app-cloud-1)
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    with:
       app_namespace: production
-      app_directory: default-ingress
+      app_name: default-ingress
       cluster_name: app-cloud-1
       cluster_location: us-west1
-    steps:
-      - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
-        with:
-          version: latest
-      - uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
-      - uses: 'google-github-actions/setup-gcloud@v0'
-      - uses: 'google-github-actions/get-gke-credentials@v0'
-        with:
-          cluster_name: ${{ env.cluster_name }}
-          location: ${{ env.cluster_location }}
-      - id: diff
-        name: kubectl diff
-        run: |
-          set +e
-          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --namespace $app_namespace --filename $app_directory > ${app_directory}.diff
-          if [[ $? -gt 1 ]]; then
-            # an error occured, fail the job
-            exit $?
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
-            # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
-          fi
-      - if: ${{ steps.diff.outputs.artifact }}
-        name: kubectl apply
-        run: kubectl apply --namespace $app_namespace --filename $app_directory --wait
+    secrets: inherit
 
   nextcloud:
     name: nextcloud
@@ -212,7 +45,7 @@ jobs:
     environment: nextcloud
     env:
       app_namespace: production
-      app_directory: nextcloud
+      app_name: nextcloud
       cluster_name: app-cloud-1
       cluster_location: us-west1
       helm_repository_name: nextcloud
@@ -245,20 +78,30 @@ jobs:
         run: |
           set +e
           template_yaml=$(mktemp)
-          helm template $app_directory $app_directory/$helm_repository_name --namespace $app_namespace --values $app_directory/values.yaml $helm_additional_args > $template_yaml
+          helm template $app_name $app_name/$helm_repository_name --namespace $app_namespace --values $app_name/values.yaml $helm_additional_args > $template_yaml
           if [[ $? -ne 0 ]]; then
             # helm failed, don't continue
             exit 1
           fi
 
-          kubectl diff --namespace $app_namespace --filename $template_yaml > ${app_directory}.diff
+          kubectl diff --namespace $app_namespace --filename $template_yaml > ${app_name}.diff
           if [[ $? -gt 1 ]]; then
             # an error occured, fail the job
             exit $?
-          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
+          elif [[ $? == 1 && -s "${app_name}.diff" ]]; then
             # there's a diff, set an output for artifact upload.
-            echo "::set-output name=artifact::${app_directory}.diff"
+            echo "::set-output name=artifact::${app_name}.diff"
           fi
       - if: ${{ steps.diff.outputs.artifact }}
         name: helm upgrade
-        run: helm upgrade $app_directory $app_directory/$helm_repository_name --wait --install --namespace $app_namespace --values $app_directory/values.yaml $helm_additional_args
+        run: helm upgrade $app_name $app_name/$helm_repository_name --wait --install --namespace $app_namespace --values $app_name/values.yaml $helm_additional_args
+
+  volumes:
+    name: volumes (app-cloud-3)
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    with:
+    env:
+      app_name: volumes
+      cluster_name: app-cloud-3
+      cluster_location: us-west1-a
+    secrets: inherit
