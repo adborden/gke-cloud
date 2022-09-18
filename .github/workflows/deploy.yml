@@ -39,7 +39,7 @@ jobs:
     secrets: inherit
 
   nextcloud:
-    uses: adborden/gke-cloud/.github/workflows/helm-deploy-template.yml@feature/reusable-workflows-helm
+    uses: adborden/gke-cloud/.github/workflows/helm-deploy-template.yml@main
     environment: nextcloud
     with:
       app_name: nextcloud
