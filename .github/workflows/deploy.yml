@@ -9,7 +9,7 @@ jobs:
 
   external-dns-app-cloud-1:
     name: external-dns (app-cloud-1)
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
     with:
       app_name: external-dns
       app_namespace: external-dns
@@ -20,7 +20,7 @@ jobs:
 
   external-dns-app-cloud-3:
     name: external-dns (app-cloud-3)
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
     with:
       app_namespace: external-dns
       app_name: external-dns
@@ -31,7 +31,7 @@ jobs:
 
   default-ingress-app-cloud-1-production:
     name: default-ingress (production) (app-cloud-1)
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
     with:
       app_namespace: production
       app_name: default-ingress
@@ -98,9 +98,8 @@ jobs:
 
   volumes:
     name: volumes (app-cloud-3)
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@feature/reusable-workflows
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
     with:
-    env:
       app_name: volumes
       cluster_name: app-cloud-3
       cluster_location: us-west1-a
