@@ -6,12 +6,12 @@ on:
       - main
 
 jobs:
-  external-dns:
-    name: external-dns
+  volumes:
+    name: volumes
     runs-on: ubuntu-latest
     env:
-      app_namespace: external-dns
-      app_directory: external-dns
+      app_directory: volumes
+      cluster_name: app-cloud-3
     steps:
       - uses: actions/checkout@v2
       - uses: azure/setup-kubectl@v3
@@ -22,7 +22,53 @@ jobs:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
       - uses: 'google-github-actions/setup-gcloud@v0'
       - name: kube credentials
-        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
+        run: gcloud container clusters get-credentials $cluster_name --region=us-west1
+      - id: diff
+        name: kubectl diff
+        run: |
+          set +e
+          kubectl_extra_args=
+          if [[ -n "$app_namespace" ]]; then
+            kubectl_extra_args="--namespace ${app_namespace}"
+          fi
+
+          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
+          kubectl diff --filename $app_directory ${kubectl_extra_args} > ${app_directory}.diff
+          if [[ $? -gt 1 ]]; then
+            # an error occured, fail the job
+            exit 1
+          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
+            # there's a diff, set an output for artifact upload.
+            echo "::set-output name=artifact::${app_directory}.diff"
+          fi
+      - if: ${{ steps.diff.outputs.artifact }}
+        name: kubectl apply
+        run: |
+          kubectl_extra_args=
+          if [[ -n "$app_namespace" ]]; then
+            kubectl_extra_args="--namespace ${app_namespace}"
+          fi
+
+          kubectl apply --filename $app_directory ${kubectl_extra_args} --wait
+
+  external-dns:
+    name: external-dns
+    runs-on: ubuntu-latest
+    env:
+      app_namespace: external-dns
+      app_directory: external-dns
+      cluster_name: app-cloud-1
+    steps:
+      - uses: actions/checkout@v2
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+      - name: kube credentials
+        run: gcloud container clusters get-credentials $cluster_name --region=us-west1
       - id: diff
         name: kubectl diff
         run: |
@@ -46,6 +92,7 @@ jobs:
     env:
       app_namespace: production
       app_directory: default-ingress
+      cluster_name: app-cloud-1
     steps:
       - uses: actions/checkout@v2
       - uses: azure/setup-kubectl@v3
@@ -56,7 +103,7 @@ jobs:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
       - uses: 'google-github-actions/setup-gcloud@v0'
       - name: kube credentials
-        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
+        run: gcloud container clusters get-credentials $cluster_name --region=us-west1
       - id: diff
         name: kubectl diff
         run: |
@@ -81,6 +128,7 @@ jobs:
     env:
       app_namespace: production
       app_directory: nextcloud
+      cluster_name: app-cloud-1
       helm_repository_name: nextcloud
       helm_repository_url: https://nextcloud.github.io/helm/
       helm_additional_args: >-
@@ -97,7 +145,7 @@ jobs:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
       - uses: 'google-github-actions/setup-gcloud@v0'
       - name: kube credentials
-        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
+        run: gcloud container clusters get-credentials $cluster_name --region=us-west1
       - uses: azure/setup-helm@v3
         with:
            version: latest
