@@ -66,12 +66,14 @@ jobs:
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
 
 
-  external-dns:
-    name: external-dns
+  external-dns-app-cloud-1:
+    name: external-dns (app-cloud-1)
     runs-on: ubuntu-latest
     env:
       app_namespace: external-dns
       app_directory: external-dns
+      cluster_name: app-cloud-1
+      cluster_location: us-west1
     steps:
       - uses: actions/checkout@v2
       - uses: azure/setup-kubectl@v3
@@ -81,17 +83,19 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
       - uses: 'google-github-actions/setup-gcloud@v0'
-      - name: kube credentials
-        run: gcloud container clusters get-credentials app-cloud-1 --region=us-west1
+      - uses: 'google-github-actions/get-gke-credentials@v0'
+        with:
+          cluster_name: ${{ env.cluster_name }}
+          location: ${{ env.cluster_location }}
       - id: diff
         name: kubectl diff
         run: |
           set +e
           # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
-          kubectl diff --namespace $app_namespace --filename $app_directory > ${app_directory}.diff
+          kubectl diff --namespace $app_namespace --kustomize $app_directory/overlays/$cluster_name > ${app_directory}.diff
           if [[ $? -gt 1 ]]; then
             # an error occured, fail the job
-            exit $?
+            exit 1
           elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
             # there's a diff, set an output for artifact upload.
             echo "::set-output name=artifact::${app_directory}.diff"
@@ -102,10 +106,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
           cat <<EOF > pr_comment_body.txt
-          <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong> is ready for deploy.
+          <strong>${{ env.app_directory }} (${{ env.cluster_name }})</strong> is ready for deploy.
 
           <details>
-          <summary>kubectl diff <strong>${{ env.app_directory }} (${{ env.app_namespace }})</strong></summary>
+          <summary>kubectl diff <strong>${{ env.app_directory }} (${{ env.cluster_name }})</strong></summary>
 
           \`\`\`diff
           $(cat ${{ steps.diff.outputs.artifact }})
@@ -113,7 +117,63 @@ jobs:
 
           </details>
 
-          - [ ] Please review the **${{ env.app_directory }} (${{ env.app_namespace }})** diff
+          - [ ] Please review the **${{ env.app_directory }} (${{ env.cluster_name }})** diff
+          EOF
+
+          gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
+
+  external-dns-app-cloud-3:
+    name: external-dns (app-cloud-3)
+    runs-on: ubuntu-latest
+    env:
+      app_namespace: external-dns
+      app_directory: external-dns
+      cluster_name: app-cloud-3
+      cluster_location: us-west1-a
+    steps:
+      - uses: actions/checkout@v2
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+      - uses: 'google-github-actions/get-gke-credentials@v0'
+        with:
+          cluster_name: ${{ env.cluster_name }}
+          location: ${{ env.cluster_location }}
+      - id: diff
+        name: kubectl diff
+        run: |
+          set +e
+          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
+          kubectl diff --namespace $app_namespace --kustomize $app_directory/overlays/$cluster_name > ${app_directory}.diff
+          if [[ $? -gt 1 ]]; then
+            # an error occured, fail the job
+            exit 1
+          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
+            # there's a diff, set an output for artifact upload.
+            echo "::set-output name=artifact::${app_directory}.diff"
+          fi
+      - if: ${{ steps.diff.outputs.artifact }}
+        name: post comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |-
+          cat <<EOF > pr_comment_body.txt
+          <strong>${{ env.app_directory }} (${{ env.cluster_name }})</strong> is ready for deploy.
+
+          <details>
+          <summary>kubectl diff <strong>${{ env.app_directory }} (${{ env.cluster_name }})</strong></summary>
+
+          \`\`\`diff
+          $(cat ${{ steps.diff.outputs.artifact }})
+          \`\`\`
+
+          </details>
+
+          - [ ] Please review the **${{ env.app_directory }} (${{ env.cluster_name }})** diff
           EOF
 
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
