@@ -70,11 +70,11 @@ jobs:
         run: |-
           # Pretty string to describe the app we're deploying. Looks like:
           # app_name (app_namespace) (cluster_name)
-          app_instance_description='${{ env.app_name }}'
-          if [[ -n '${{ env.app_namespace }}' ]]; then
+          app_instance_description="${app_name}"
+          if [[ -n "${app_namespace}" ]]; then
             app_instance_description="${app_instance_description} (${app_namespace})"
           fi
-          app_instance_description='${app_instance_description} (${{ env.cluster_name }})'
+          app_instance_description="${app_instance_description} (${cluster_name})"
 
           cat <<EOF > pr_comment_body.txt
           <strong>${app_instance_description}</strong> is ready for deploy.

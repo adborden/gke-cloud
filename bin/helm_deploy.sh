@@ -14,7 +14,7 @@ function helm_args () {
 
   # Add any namespace specific values files
   if [[ -e "$app_name/$app_namespace.yaml" ]]; then
-    additional_args="${additional_args} --values ${app_namespace}/${app_namespace}.yaml"
+    additional_args="${additional_args} --values ${app_name}/${app_namespace}.yaml"
   fi
 
   # Add any values files containing secrets
