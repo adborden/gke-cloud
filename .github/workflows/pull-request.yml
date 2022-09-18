@@ -3,6 +3,69 @@ name: pull-request
 on: [pull_request]
 
 jobs:
+  volumes:
+    name: volumes
+    runs-on: ubuntu-latest
+    env:
+      app_directory: volumes
+      cluster_name: app-cloud-3
+      cluster_location: us-west1-a
+    steps:
+      - uses: actions/checkout@v2
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_KEY }}'
+      - uses: 'google-github-actions/setup-gcloud@v0'
+      - uses: 'google-github-actions/get-gke-credentials@v0'
+        with:
+          cluster_name: ${{ env.cluster_name }}
+          location: ${{ env.cluster_location }}
+      - id: diff
+        name: kubectl diff
+        run: |
+          set +e
+          kubectl_extra_args=
+          if [[ -n "$app_namespace" ]]; then
+            kubectl_extra_args="--namespace ${app_namespace}"
+          fi
+
+          # kubectl diff exits 0 if there is no diff, 1 if there is a diff, >1 if error
+          kubectl diff --filename $app_directory ${kubectl_extra_args} > ${app_directory}.diff
+          if [[ $? -gt 1 ]]; then
+            # an error occured, fail the job
+            exit 1
+          elif [[ $? == 1 && -s "${app_directory}.diff" ]]; then
+            # there's a diff, set an output for artifact upload.
+            echo "::set-output name=artifact::${app_directory}.diff"
+          fi
+      - if: ${{ steps.diff.outputs.artifact }}
+        name: post comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |-
+          app_instace=${app_namespace:-${cluster_name}}
+
+          cat <<EOF > pr_comment_body.txt
+          <strong>${{ env.app_directory }} (${app_instance})</strong> is ready for deploy.
+
+          <details>
+          <summary>kubectl diff <strong>${{ env.app_directory }} (${app_instance})</strong></summary>
+
+          \`\`\`diff
+          $(cat ${{ steps.diff.outputs.artifact }})
+          \`\`\`
+
+          </details>
+
+          - [ ] Please review the **${{ env.app_directory }} (${app_instance})** diff
+          EOF
+
+          gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
+
+
   external-dns:
     name: external-dns
     runs-on: ubuntu-latest
