@@ -69,7 +69,7 @@ jobs:
         run: |
           set +e
           template_yaml=$(mktemp)
-          helm template $app_name $app_name/$helm_repository_name --namespace $app_namespace --values $app_name/values.yaml --values <( cat <<<${HELM_SECRET_VALUES:-} ) $helm_additional_args > $template_yaml
+          bin/helm_deploy.sh > $template_yaml
           if [[ $? -ne 0 ]]; then
             # helm failed, don't continue
             exit 1
@@ -110,4 +110,4 @@ jobs:
           gh pr comment ${{ github.event.number }} --body-file pr_comment_body.txt
       - if: ${{ steps.diff.outputs.diff && github.event_name == 'push' }}
         name: helm upgrade
-        run: helm upgrade $app_name $app_name/$helm_repository_name --debug --wait --install --namespace $app_namespace --values $app_name/values.yaml --values <( cat <<<${HELM_SECRET_VALUES:-} ) $helm_additional_args
+        run: bin/helm_deploy.sh --commit

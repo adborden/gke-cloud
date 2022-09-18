@@ -19,12 +19,12 @@ function kubectl_args () {
   fi
 }
 
-function run_apply () {
-  kubectl apply --wait $(kubectl_args)
+function kubectl_apply () {
+  exec kubectl apply --wait $(kubectl_args)
 }
 
-function run_diff () {
-  kubectl diff $(kubectl_args)
+function kubectl_diff () {
+  exec kubectl diff $(kubectl_args)
 }
 
 while [[ "$#" -gt 0 ]]; do
@@ -33,13 +33,13 @@ while [[ "$#" -gt 0 ]]; do
 
   case $option in
     --commit)
-      run_apply
+      kubectl_apply
       ;;
     *)
-      echo Unknown option $option >&2
+      echo "Unknown option $option" >&2
       exit 1
       ;;
   esac
 done
 
-run_diff
+kubectl_diff
