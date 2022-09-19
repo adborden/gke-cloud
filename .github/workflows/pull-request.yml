@@ -26,7 +26,7 @@ jobs:
     secrets: inherit
 
   default-ingress-app-cloud-1-production:
-    name: default-ingress (app-cloud-1) (production)
+    name: default-ingress (production) (app-cloud-1)
     uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
     with:
       app_namespace: production
