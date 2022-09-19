@@ -35,7 +35,8 @@ jobs:
       cluster_location: us-west1
     secrets: inherit
 
-  nextcloud:
+  nextcloud-app-cloud-1-production:
+    name: nextcloud (production) (app-cloud-1)
     uses: adborden/gke-cloud/.github/workflows/helm-deploy-template.yml@main
     with:
       app_name: nextcloud
@@ -44,8 +45,18 @@ jobs:
       cluster_location: us-west1
       helm_repository_name: nextcloud
       helm_repository_url: https://nextcloud.github.io/helm/
-      helm_additional_args: >-
-        --set nextcloud.host=nextcloud.app.a14n.net
+    secrets: inherit
+
+  nextcloud-app-cloud-3-stage:
+    name: nextcloud (stage) (app-cloud-3)
+    uses: adborden/gke-cloud/.github/workflows/helm-deploy-template.yml@main
+    with:
+      app_name: nextcloud
+      app_namespace: stage
+      cluster_name: app-cloud-3
+      cluster_location: us-west1-a
+      helm_repository_name: nextcloud
+      helm_repository_url: https://nextcloud.github.io/helm/
     secrets: inherit
 
   volumes:
