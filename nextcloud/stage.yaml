@@ -1,3 +1,14 @@
 ---
 nextcloud:
   host: nextcloud.stage.app.a14n.net
+
+persistence:
+  existingClaim: pvc-nextcloud
+  nextcloudData:
+    existingClaim: pvc-nextcloud-data
+
+postgresql:
+  primary:
+    persistence:
+      enabled: true
+      existingClaim: pvc-nextcloud-postgres-0
