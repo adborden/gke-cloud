@@ -70,12 +70,3 @@ jobs:
       helm_repository_name: nextcloud
       helm_repository_url: https://nextcloud.github.io/helm/
     secrets: inherit
-
-  volumes:
-    name: volumes (app-cloud-2)
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
-    with:
-      app_name: volumes
-      cluster_name: app-cloud-2
-      cluster_location: us-west1-a
-    secrets: inherit
