@@ -1,0 +1,43 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+- ../../../base
+
+patchesStrategicMerge:
+  - |-
+    apiVersion: networking.gke.io/v1
+    kind: ManagedCertificate
+    metadata:
+      name: default
+    spec:
+      domains:
+        - nextcloud.app.a14n.net
+        - wallabag.app.a14n.net
+  - |-
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: default
+    spec:
+      rules:
+        - host: nextcloud.app.a14n.net
+          http:
+            paths:
+            - pathType: Prefix
+              path: /
+              backend:
+                service:
+                  name: nextcloud
+                  port:
+                    number: 8080
+        - host: wallabag.app.a14n.net
+          http:
+            paths:
+            - pathType: Prefix
+              path: /
+              backend:
+                service:
+                  name: wallabag
+                  port:
+                    number: 8080

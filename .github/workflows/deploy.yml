@@ -36,6 +36,18 @@ jobs:
       app_name: default-ingress
       cluster_name: app-cloud-1
       cluster_location: us-west1
+      kustomize_overlay_name: app-cloud-1/production
+    secrets: inherit
+
+  default-ingress-app-cloud-2-production:
+    name: default-ingress (production) (app-cloud-2)
+    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
+    with:
+      app_namespace: production
+      app_name: default-ingress
+      cluster_name: app-cloud-2
+      cluster_location: us-west1-a
+      kustomize_overlay_name: app-cloud-2/production
     secrets: inherit
 
   nextcloud-app-cloud-1-production:

@@ -44,24 +44,4 @@ metadata:
     networking.gke.io/managed-certificates: default
     networking.gke.io/v1beta1.FrontendConfig: default
 spec:
-  rules:
-    - host: nextcloud.app.a14n.net
-      http:
-        paths:
-        - pathType: Prefix
-          path: /
-          backend:
-            service:
-              name: nextcloud
-              port:
-                number: 8080
-    - host: wallabag.app.a14n.net
-      http:
-        paths:
-        - pathType: Prefix
-          path: /
-          backend:
-            service:
-              name: wallabag
-              port:
-                number: 8080
+  rules: []
