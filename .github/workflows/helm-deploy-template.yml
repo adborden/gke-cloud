@@ -27,8 +27,6 @@ on:
     secrets:
       GCLOUD_SERVICE_ACCOUNT_KEY:
         required: true
-      GITHUB_TOKEN:
-        required: true
       HELM_SECRET_VALUES:
         required: false
 
