@@ -13,7 +13,6 @@ patchesStrategicMerge:
     spec:
       domains:
         - nextcloud.app.a14n.net
-        - wallabag.app.a14n.net
   - |-
     apiVersion: networking.k8s.io/v1
     kind: Ingress
@@ -29,15 +28,5 @@ patchesStrategicMerge:
               backend:
                 service:
                   name: nextcloud
-                  port:
-                    number: 8080
-        - host: wallabag.app.a14n.net
-          http:
-            paths:
-            - pathType: Prefix
-              path: /
-              backend:
-                service:
-                  name: wallabag
                   port:
                     number: 8080
