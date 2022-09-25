@@ -15,6 +15,9 @@ on:
       cluster_location:
         required: true
         type: string
+      environment:
+        required: false
+        type: string
       helm_repository_name:
         required: true
         type: string
@@ -34,6 +37,7 @@ jobs:
   deploy:
     name: deploy
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     outputs:
       diff: ${{ steps.diff.outputs.diff }}
     env:
