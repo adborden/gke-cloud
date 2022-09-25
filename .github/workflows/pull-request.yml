@@ -3,17 +3,6 @@ name: pull-request
 on: [pull_request]
 
 jobs:
-  external-dns-app-cloud-1:
-    name: external-dns (app-cloud-1)
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
-    with:
-      app_name: external-dns
-      app_namespace: external-dns
-      cluster_name: app-cloud-1
-      cluster_location: us-west1
-      kustomize_overlay_name: app-cloud-1
-    secrets: inherit
-
   external-dns-app-cloud-2:
     name: external-dns (app-cloud-2)
     uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
@@ -25,17 +14,6 @@ jobs:
       kustomize_overlay_name: app-cloud-2
     secrets: inherit
 
-  default-ingress-app-cloud-1-production:
-    name: default-ingress (production) (app-cloud-1)
-    uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
-    with:
-      app_namespace: production
-      app_name: default-ingress
-      cluster_name: app-cloud-1
-      cluster_location: us-west1
-      kustomize_overlay_name: app-cloud-1/production
-    secrets: inherit
-
   default-ingress-app-cloud-2-production:
     name: default-ingress (production) (app-cloud-2)
     uses: adborden/gke-cloud/.github/workflows/kubectl-deploy-template.yml@main
@@ -45,18 +23,6 @@ jobs:
       cluster_name: app-cloud-2
       cluster_location: us-west1-a
       kustomize_overlay_name: app-cloud-2/production
-    secrets: inherit
-
-  nextcloud-app-cloud-1-production:
-    name: nextcloud (production) (app-cloud-1)
-    uses: adborden/gke-cloud/.github/workflows/helm-deploy-template.yml@main
-    with:
-      app_name: nextcloud
-      app_namespace: production
-      cluster_name: app-cloud-1
-      cluster_location: us-west1
-      helm_repository_name: nextcloud
-      helm_repository_url: https://nextcloud.github.io/helm/
     secrets: inherit
 
   nextcloud-app-cloud-2-production:
@@ -74,14 +40,14 @@ jobs:
       environment: nextcloud-production
     secrets: inherit
 
-  nextcloud-app-cloud-2-stage:
-    name: nextcloud (stage) (app-cloud-2)
-    uses: adborden/gke-cloud/.github/workflows/helm-deploy-template.yml@main
-    with:
-      app_name: nextcloud
-      app_namespace: stage
-      cluster_name: app-cloud-2
-      cluster_location: us-west1-a
-      helm_repository_name: nextcloud
-      helm_repository_url: https://nextcloud.github.io/helm/
-    secrets: inherit
+  #nextcloud-app-cloud-2-stage:
+  #  name: nextcloud (stage) (app-cloud-2)
+  #  uses: adborden/gke-cloud/.github/workflows/helm-deploy-template.yml@main
+  #  with:
+  #    app_name: nextcloud
+  #    app_namespace: stage
+  #    cluster_name: app-cloud-2
+  #    cluster_location: us-west1-a
+  #    helm_repository_name: nextcloud
+  #    helm_repository_url: https://nextcloud.github.io/helm/
+  #  secrets: inherit

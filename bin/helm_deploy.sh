@@ -26,7 +26,7 @@ function helm_args () {
 }
 
 function helm_template () {
-  exec helm template $(helm_args)
+  exec helm template $(helm_args) --is-upgrade
 }
 
 function helm_upgrade () {
