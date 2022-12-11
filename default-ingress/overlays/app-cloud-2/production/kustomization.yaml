@@ -12,6 +12,7 @@ patchesStrategicMerge:
       name: default
     spec:
       domains:
+        - argo.app.a14n.net
         - nextcloud.app.a14n.net
         - wallabag.app.a14n.net
   - |-
@@ -21,6 +22,16 @@ patchesStrategicMerge:
       name: default
     spec:
       rules:
+        - host: argo.app.a14n.net
+          http:
+            paths:
+            - pathType: Prefix
+              path: /
+              backend:
+                service:
+                  name: argocd-server
+                  port:
+                    number: 80
         - host: nextcloud.app.a14n.net
           http:
             paths:
