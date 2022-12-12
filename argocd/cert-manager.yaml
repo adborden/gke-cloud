@@ -1,0 +1,21 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    chart: cert-manager
+    repoURL: https://charts.jetstack.io
+    targetRevision: 1.10.1
+    helm:
+      parameters:
+        - name: installCRDs
+          value: 'true'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: cert-manager
