@@ -12,5 +12,5 @@ jobs:
         uses: piraces/kube-score-ga@v0.1.2
         with:
           manifests-folders: >
-            external-dns/*.yml,default-ingress/*.yml
+            external-dns/*.yml
         continue-on-error: true
