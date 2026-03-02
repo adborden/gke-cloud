@@ -7,7 +7,7 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
       - name: kube-score check
         uses: piraces/kube-score-ga@v0.1.2
         with:
