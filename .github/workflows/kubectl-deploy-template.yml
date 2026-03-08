@@ -35,7 +35,7 @@ jobs:
       kustomize_overlay_name: ${{ inputs.kustomize_overlay_name}}
     steps:
       - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-kubectl@v4
         with:
           version: latest
       - uses: 'google-github-actions/auth@v0'
