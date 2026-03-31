@@ -51,7 +51,7 @@ jobs:
       HELM_SECRET_VALUES: ${{ secrets.HELM_SECRET_VALUES }}
     steps:
       - uses: actions/checkout@v2
-      - uses: azure/setup-kubectl@v3
+      - uses: azure/setup-kubectl@v5
         with:
           version: latest
       - uses: 'google-github-actions/auth@v0'
