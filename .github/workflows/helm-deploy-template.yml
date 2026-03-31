@@ -62,7 +62,7 @@ jobs:
         with:
           cluster_name: ${{ env.cluster_name }}
           location: ${{ env.cluster_location }}
-      - uses: azure/setup-helm@v3
+      - uses: azure/setup-helm@v5
         with:
            version: latest
       - name: helm repo add
