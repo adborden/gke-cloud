@@ -3,7 +3,7 @@
 ##
 image:
   repository: nextcloud
-  tag: 24-fpm-alpine
+  tag: 33-fpm-alpine
   pullPolicy: IfNotPresent
   # pullSecrets:
   #   - myRegistrKeySecretName
