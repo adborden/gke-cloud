@@ -50,7 +50,7 @@ jobs:
       helm_additional_args: ${{ inputs.helm_additional_args }}
       HELM_SECRET_VALUES: ${{ secrets.HELM_SECRET_VALUES }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
       - uses: azure/setup-kubectl@v3
         with:
           version: latest
